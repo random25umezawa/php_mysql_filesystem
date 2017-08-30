@@ -18,6 +18,7 @@ path:<input type="text" id="path"><br>
 name:<input type="text" id="name"><br>
 type:<input type="text" id="type"><br>
 <button id="send_button">OK</button>
+<div id="node_area"></div>
 <div id="tree_area"></div>
 <table border="1" id="file_table"></table>
 <script>
@@ -59,38 +60,54 @@ type:<input type="text" id="type"><br>
 				data.sort(function(a,b) {
 					return a.path>b.path;
 				});
-				console.log(data,dataType);
 				var filesystem = {};
 				for(var row of data) {
 					filesystem[row.path] = row;
 				}
 				var tree_area = $("#tree_area");
+				var files = {};
+				files["children"] = {};
 				for(var row of data) {
 					var key = row.path;
-					console.log(key);
 					var filename = filesystem[key].name;
 					var path = filesystem[key].path;
 					var index = -1;
 					var indent = 0;
-					while((index = path.lastIndexOf("g"))>=0) {
-						path = path.substring(0,index);
+					var parent = files;
+					while((index = path.indexOf("g"))>=0) {
+						parent_path = path.substring(0,index);
+						path = path.substring(index+1);
+						parent = parent.children[parent_path];
 						indent++;
-							/*
-						filename = filesystem[path].name+" - "+filename;
-						*/
 					}
-					var img_src = "";
-					if(filesystem[key].type==1) {
-						img_src="file.png";
-					}else {
-						img_src="folder.png";
-					}
-					var temp_div = $("<div>");
-					temp_div.append(`<span style="margin-right:${indent*16}">`);
-					temp_div.append(`<img src="${img_src}">`);
-					temp_div.append($(`<span>`).html(filename));
-					tree_area.append(temp_div);
+					row["children"] = {};
+					parent.children[path] = row;
 				}
+				var stack = {};
+				for(var file in files.children) {
+					stack[file] = files.children[file];
+				}
+				var saiki = function(parent,list,indent) {
+					for(var i in list) {
+						var img_src = "";
+						if(list[i].type==1) {
+							img_src="file.png";
+						}else {
+							img_src="folder.png";
+						}
+						var div = $(`<div>`);
+						var span = $(`<span style="margin-left:${indent*16}">`);
+						span.append(`<img src="${img_src}">`);
+						span.append($(`<span>`).html(list[i].name));
+						saiki(div,list[i].children,indent+1);
+						span.on("click",function() {
+							$(this).next().toggle()
+						});
+						parent.append($(`<div>`).append(span).append(div));
+					}
+				};
+				saiki($("#node_area"),stack,0);
+
 				var _table = $("#file_table");
 				_table.html("");
 				var _thead = $("<tr>");
