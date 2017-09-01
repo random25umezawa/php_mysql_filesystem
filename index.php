@@ -17,10 +17,19 @@
 path:<input type="text" id="path"><br>
 name:<input type="text" id="name"><br>
 type:<input type="text" id="type"><br>
-<button id="send_button">OK</button>
+<button id="send_button">INSERT</button>
 <div id="node_area"></div>
 <div id="tree_area"></div>
 <table border="1" id="file_table"></table>
+<style>
+	.file_over{
+		user-select: none;
+	}
+	.file_over:hover{
+		background-color: #eee;
+		border-radius: 5px;
+	}
+</style>
 <script>
 	$(document).ready(function() {
 		makeTable();
@@ -56,6 +65,7 @@ type:<input type="text" id="type"><br>
 			dateType:"json",
 			data:{},
 			success: function(data,dataType) {
+				console.log(data);
 				data = JSON.parse(data);
 				data.sort(function(a,b) {
 					return a.path>b.path;
@@ -90,23 +100,31 @@ type:<input type="text" id="type"><br>
 				var saiki = function(parent,list,indent) {
 					for(var i in list) {
 						var img_src = "";
+						var file_type = "";
 						if(list[i].type==1) {
 							img_src="file.png";
+							file_type="file";
 						}else {
 							img_src="folder.png";
+							file_type="folder";
 						}
 						var div = $(`<div>`);
-						var span = $(`<span style="margin-left:${indent*16}">`);
+						var span = $(`<span style="margin-left:${indent*16}" class="file_over">`);
 						span.append(`<img src="${img_src}">`);
 						span.append($(`<span>`).html(list[i].name));
 						saiki(div,list[i].children,indent+1);
 						span.on("click",function() {
 							$(this).next().toggle()
 						});
-						parent.append($(`<div>`).append(span).append(div));
+						parent.append($(`<div class="${file_type}" data-path="${list[i].path}">`).append(span).append(div));
 					}
 				};
 				saiki($("#node_area"),stack,0);
+
+				$(".folder").on("click",function(e) {
+					$("#path").val($(this).data("path"));
+					return false;
+				});
 
 				var _table = $("#file_table");
 				_table.html("");
